@@ -48,6 +48,12 @@ rule hatchet_count_alleles:
     shell:
         "hatchet run hatchet-count-alleles.ini"
 
+rule hatchet_count_reads:
+    conda:
+        "envs/HATCHet-env.yaml"
+    shell:
+        "hatchet run hatchet-count-reads.ini"
+
 # let's genotype snps using something like platypus
 # rule genotype_snps:
 #     conda:
