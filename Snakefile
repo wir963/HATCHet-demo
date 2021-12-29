@@ -80,8 +80,16 @@ rule hatchet_count_reads:
 rule hatchet_combine_counts:
     conda:
         "envs/HATCHet-env.yaml"
+    output:
+        "output/rdr/total.tsv"
     shell:
         "hatchet run hatchet-combine-counts.ini"
+
+rule hatchet_cluster_bins:
+    conda:
+        "envs/HATCHet-env.yaml"
+    shell:
+        "hatchet run hatchet-cluster-bins.ini"
 
 # let's genotype snps using something like platypus
 # rule genotype_snps:
