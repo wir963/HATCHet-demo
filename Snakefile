@@ -40,4 +40,24 @@ rule genotype_snps:
     conda:
         "envs/HATCHet-env.yaml"
     shell:
-        "hatchet run hatchet.ini"
+        "hatchet run hatchet-genotype-snps.ini"
+
+rule hatchet_count_alleles:
+    conda:
+        "envs/HATCHet-env.yaml"
+    shell:
+        "hatchet run hatchet-count-alleles.ini"
+
+# let's genotype snps using something like platypus
+# rule genotype_snps:
+#     conda:
+#         "envs/HATCHet-env.yaml"
+#     shell:
+#         "hatchet genotype-snps "
+#         "-N {NORMAL} "
+#         "-r {REF} "
+#         "-j ${J} "
+#         "-c ${MINREADS} "
+#         "-C ${MAXREADS}"
+#         # "-R ${LIST} " use this to limit genotype_snps to a particular region
+#         "-o ${SNP}"
