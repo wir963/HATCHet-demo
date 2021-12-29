@@ -70,8 +70,18 @@ rule hatchet_count_alleles:
 rule hatchet_count_reads:
     conda:
         "envs/HATCHet-env.yaml"
+    output:
+        "output/rdr/normal.1bed",
+        "output/rdr/tumor.1bed",
+        "output/rdr/total.tsv"
     shell:
         "hatchet run hatchet-count-reads.ini"
+
+rule hatchet_combine_counts:
+    conda:
+        "envs/HATCHet-env.yaml"
+    shell:
+        "hatchet run hatchet-combine-counts.ini"
 
 # let's genotype snps using something like platypus
 # rule genotype_snps:
