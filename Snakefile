@@ -42,11 +42,30 @@ rule genotype_snps:
     shell:
         "hatchet run hatchet-genotype-snps.ini"
 
+# rule hatchet_count_alleles:
+#     conda:
+#         "envs/HATCHet-env.yaml"
+#     shell:
+#         "hatchet run hatchet-count-alleles.ini"
+
+
 rule hatchet_count_alleles:
     conda:
         "envs/HATCHet-env.yaml"
+    output:
+        normal="new_output/baf/normal.1bed",
+        tumor="new_output/baf/tumor.1bed"
     shell:
-        "hatchet run hatchet-count-alleles.ini"
+        "hatchet count-alleles "
+        "--tumors data/bulk_03clone1_06clone0_01normal.sorted.bam data/bulk_08clone1_Noneclone0_02normal.sorted.bam data/bulk_Noneclone1_09clone0_01normal.sorted.bam "
+        "--normal data/normal.bam "
+        "--reference data/hg19.fa "
+        "--snps output/snps/*.vcf.gz "
+        "--outputnormal {output.normal} "
+        "--outputtumors {output.tumor} "
+        # "--outputsnps "
+        "--mincov 8 "
+        "--maxcov 300 "
 
 rule hatchet_count_reads:
     conda:
