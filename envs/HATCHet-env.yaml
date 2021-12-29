@@ -5,9 +5,9 @@ channels:
   - defaults
   - dranew
 dependencies:
-  - hatchet
   - bcftools
   - samtools
+  - hatchet
   - tabix
   - mosdepth
   - picard
