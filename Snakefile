@@ -35,3 +35,9 @@ rule download_reference_genome:
         "curl -L https://hgdownload.soe.ucsc.edu/goldenPath/hg19/bigZips/hg19.fa.gz | gzip -d > data/hg19.fa && "
         "samtools faidx data/hg19.fa && "
         "samtools dict data/hg19.fa > data/hg19.dict"
+
+rule genotype_snps:
+    conda:
+        "envs/HATCHet-env.yaml"
+    shell:
+        "hatchet run hatchet.ini"

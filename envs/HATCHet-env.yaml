@@ -1,0 +1,12 @@
+name: HATCHet-env
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+  - dranew
+dependencies:
+  - hatchet
+  - tabix
+  - mosdepth
+  - picard
+  - shapeit
