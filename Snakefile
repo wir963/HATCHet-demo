@@ -36,11 +36,36 @@ rule download_reference_genome:
         "samtools faidx data/hg19.fa && "
         "samtools dict data/hg19.fa > data/hg19.dict"
 
+# download these common snps because this reference genome uses chr1, etc.
+# https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/GATK/00-All.vcf.gz
+# alternatively, you would download these common snps
+# https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz
+rule download_common_snps:
+    shell:
+        "https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/GATK/00-All.vcf.gz"
+
+# rule genotype_snps:
+#     conda:
+#         "envs/HATCHet-env.yaml"
+#     shell:
+#         "hatchet run hatchet-genotype-snps.ini"
+
 rule genotype_snps:
     conda:
         "envs/HATCHet-env.yaml"
+    input:
+        "data/normal.bam",
+        "data/hg19.fa"
+    output:
+        directory("new_output/snps/")
     shell:
-        "hatchet run hatchet-genotype-snps.ini"
+        "hatchet hatchet-genotype "
+        "--normal data/normal.bam "
+        "--reference data/hg19.fa "
+        "--snps https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/GATK/00-All.vcf.gz "# use this version because the ref genome using chr1
+        "--mincov 8 "
+        "--maxcov 300 "
+        "--outputsnps new_output/snps/"
 
 # rule hatchet_count_alleles:
 #     conda:
@@ -64,18 +89,22 @@ rule hatchet_count_alleles:
         "--outputnormal {output.normal} "
         "--outputtumors {output.tumor} "
         # "--outputsnps "
+        # "--regions " required for WXS (although I don't think this is true, especially since SNPs are passed)
         "--mincov 8 "
         "--maxcov 300 "
 
 rule hatchet_count_reads:
     conda:
         "envs/HATCHet-env.yaml"
+    input:
+        ""
     output:
         "output/rdr/normal.1bed",
         "output/rdr/tumor.1bed",
         "output/rdr/total.tsv"
     shell:
-        "hatchet run hatchet-count-reads.ini"
+        "hatchet count-reads "
+        "--normal"
 
 rule hatchet_combine_counts:
     conda:
