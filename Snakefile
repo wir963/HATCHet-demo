@@ -135,6 +135,12 @@ rule hatchet_compute_cn:
         "export GRB_LICENSE_FILE=/data/CDSL_Gurobi_users/gurobi910/gurobi.lic && "
         "hatchet run hatchet-compute-cn.ini"
 
+rule hatchet_plot_cn:
+    conda:
+        "envs/HATCHet-env.yaml"
+    shell:
+        "hatchet run hatchet-plot-cn.ini"
+
 # let's genotype snps using something like platypus
 # rule genotype_snps:
 #     conda:
