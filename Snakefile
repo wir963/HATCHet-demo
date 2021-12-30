@@ -59,7 +59,7 @@ rule genotype_snps:
     output:
         directory("new_output/snps/")
     shell:
-        "hatchet hatchet-genotype "
+        "hatchet genotype-snps "
         "--normal data/normal.bam "
         "--reference data/hg19.fa "
         "--snps https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/GATK/00-All.vcf.gz "# use this version because the ref genome using chr1
