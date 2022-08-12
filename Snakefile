@@ -40,6 +40,7 @@ rule download_reference_genome:
 # https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/GATK/00-All.vcf.gz
 # alternatively, you would download these common snps
 # https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz
+# don't need to actually download because you can use a URL in the genotype_snps rule
 rule download_common_snps:
     shell:
         "https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/GATK/00-All.vcf.gz"
@@ -77,13 +78,18 @@ rule genotype_snps:
 rule hatchet_count_alleles:
     conda:
         "envs/HATCHet-env.yaml"
+    input:
+        normal="data/normal.bam",
+        tumor="data/bulk_03clone1_06clone0_01normal.sorted.bam data/bulk_08clone1_Noneclone0_02normal.sorted.bam data/bulk_Noneclone1_09clone0_01normal.sorted.bam",
+        # snps_list
     output:
-        normal="new_output/baf/normal.1bed",
-        tumor="new_output/baf/tumor.1bed"
+        normal_baf="new_output/baf/normal.1bed", # contains the number of reads for the major and minor allele
+        tumor_baf="new_output/baf/tumor.1bed"
     shell:
         "hatchet count-alleles "
-        "--tumors data/bulk_03clone1_06clone0_01normal.sorted.bam data/bulk_08clone1_Noneclone0_02normal.sorted.bam data/bulk_Noneclone1_09clone0_01normal.sorted.bam "
-        "--normal data/normal.bam "
+        "--tumors {output.tumor} "
+        "--normal {input.normal} "
+        "--samples normal tumor1 tumor2 tumor3 "
         "--reference data/hg19.fa "
         "--snps output/snps/*.vcf.gz "
         "--outputnormal {output.normal} "
@@ -93,53 +99,122 @@ rule hatchet_count_alleles:
         "--mincov 8 "
         "--maxcov 300 "
 
+# count the mapped sequencing reads in bins of fixed and given length, uniformly for a BAM file of a normal sample
+# and one or more BAM files of tumor samples
 rule hatchet_count_reads:
     conda:
         "envs/HATCHet-env.yaml"
     input:
-        ""
+        normal="data/normal.bam",
+    params: # use as params for now TODO figure out better way
+        tumor="data/bulk_03clone1_06clone0_01normal.sorted.bam data/bulk_08clone1_Noneclone0_02normal.sorted.bam data/bulk_Noneclone1_09clone0_01normal.sorted.bam",
     output:
-        "output/rdr/normal.1bed",
-        "output/rdr/tumor.1bed",
-        "output/rdr/total.tsv"
+        normal_rdr="output/rdr/normal.1bed",
+        tumor_rdr="output/rdr/tumor.1bed",
+        total_rd="output/rdr/total.tsv"
     shell:
         "hatchet count-reads "
-        "--normal"
+        "--tumors {output.tumor} "
+        "--normal {input.normal} "
+        "--samples normal tumor1 tumor2 tumor3 "
+        "--reference data/hg19.fa "
+        "--size 50kb "
+        "--processes 6 "
+        "--outputnormal {output.normal_rdr} "
+        "--outputtumors {output.tumor_rdr} "
+        "--outputtotal {output.total_rd} "
 
+# combine tumor bin counts, normal bin counts and tumor allele counts to obtain the read-depth ratio
+# and the mean B-allele frequency of each bin
 rule hatchet_combine_counts:
     conda:
         "envs/HATCHet-env.yaml"
+    input:
+        normal_rdr="output/rdr/normal.1bed",
+        tumor_rdr="output/rdr/tumor.1bed",
+        total_rd="output/rdr/total.tsv",
+        tumor_baf="output/baf/tumor.1bed"
     output:
-        "output/rdr/total.tsv"
+        "output/bb/bulk.bb" # tab separated file that include many fields see - http://compbio.cs.brown.edu/hatchet/doc_combine_counts.html
     shell:
-        "hatchet run hatchet-combine-counts.ini"
+        "hatchet combine-counts "
+        "--normalbins {input.normal_rdr} "
+        "--tumorbins {input.tumor_rdr} "
+        "--tumorbafs {input.tumor_baf} "
+        "--totalcounts {input.total_rd} "
+        "--blocklength 25kb "
+        "--phase None "
+        " > {output} "
+        # "--msr 3000 " # minimum number of SNP-covering reads
+        # "--mtr 5000 " # minimum number of total reads per bin
+        # "--outfile {output} "
 
 rule hatchet_cluster_bins:
     conda:
         "envs/HATCHet-env.yaml"
+    input:
+        "output/bb/bulk.bb"
+    output:
+        "output/bbc/bulk.bbc",
+        "output/bbc/bulk.seg"
     shell:
-        "hatchet run hatchet-cluster-bins.ini"
+        "hatchet cluster-bins "
+        "{input} "
+        "--outsegments {output[1]} "
+        "--outbins {output[0]} "
+        "--diploidbaf 0.08 "
+        "--tolerancebaf 0.04 "
+        "--tolerancerdr 0.15 "
+
 
 rule hatchet_plot_bins:
     conda:
         "envs/HATCHet-env.yaml"
+    input:
+        "output/bbc/bulk.bbc"
+    params:
+        "output/plots"
+    output:
+        "output/plots/bb_clustered.png"
     shell:
-        "hatchet run hatchet-plot-bins.ini"
+        "hatchet plot-bins "
+        "--rundir {params} "
+        "-tS 0.005 "
+        "{input} "
 
 rule hatchet_compute_cn:
     conda:
         "envs/HATCHet-env.yaml"
+    input:
+        "output/bbc/bulk.bbc",
+        "output/bbc/bulk.seg"
+    params:
+        in_dir="output/bbc/bulk",
+        out_dir="output/results"
+    output:
+        "output/results/best.bbc.ucn",
+        "output/results/best.seg.ucn",
     shell:
         "module use --prepend /data/CDSL_Gurobi_users/modules && "
         "module load gurobi && "
         "export GRB_LICENSE_FILE=/data/CDSL_Gurobi_users/gurobi910/gurobi.lic && "
-        "hatchet run hatchet-compute-cn.ini"
+        "hatchet compute-cn "
+        "-i {params.in_dir} "
+        "-x {params.out_dir} "
+        "--clones 2,8 " # default
 
 rule hatchet_plot_cn:
     conda:
         "envs/HATCHet-env.yaml"
+    input:
+        "output/results/best.bbc.ucn"
+    output:
+        "output/summary/intratumor-clones-allelecn.pdf"
     shell:
-        "hatchet run hatchet-plot-cn.ini"
+        "hatchet plot-cn "
+        "--rundir output/summary "
+        "{input} "
+
 
 # let's genotype snps using something like platypus
 # rule genotype_snps:
