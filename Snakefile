@@ -2,8 +2,9 @@
 
 rule all:
     input:
-        "data/normal.bam",
-        "data/hg19.fa"
+        "new_output/snps/",
+        # "data/normal.bam",
+        # "data/hg19.fa"
 
 rule download_bam_files:
     output:
