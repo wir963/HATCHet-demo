@@ -2,7 +2,8 @@
 
 rule all:
     input:
-        "new_output/snps/",
+        #"new_output/snps/",
+        "new_output/baf/normal.1bed"
         # "data/normal.bam",
         # "data/hg19.fa"
 
@@ -61,6 +62,7 @@ rule genotype_snps:
     output:
         directory("new_output/snps/")
     shell:
+        "mkdir {output[0]} && "
         "hatchet genotype-snps "
         "--normal data/normal.bam "
         "--reference data/hg19.fa "
@@ -81,21 +83,22 @@ rule hatchet_count_alleles:
         "envs/HATCHet-env.yaml"
     input:
         normal="data/normal.bam",
-        tumor="data/bulk_03clone1_06clone0_01normal.sorted.bam data/bulk_08clone1_Noneclone0_02normal.sorted.bam data/bulk_Noneclone1_09clone0_01normal.sorted.bam",
-        # snps_list
+        tumor=["data/bulk_03clone1_06clone0_01normal.sorted.bam", "data/bulk_08clone1_Noneclone0_02normal.sorted.bam", "data/bulk_Noneclone1_09clone0_01normal.sorted.bam"],
     output:
         normal_baf="new_output/baf/normal.1bed", # contains the number of reads for the major and minor allele
-        tumor_baf="new_output/baf/tumor.1bed"
+        tumor_baf="new_output/baf/tumor.1bed",
+        snps_list = "new_output/count_alleles/snps"
     shell:
+        "mkdir {output.snps_list} && "
         "hatchet count-alleles "
-        "--tumors {output.tumor} "
+        "--tumors {input.tumor} "
         "--normal {input.normal} "
         "--samples normal tumor1 tumor2 tumor3 "
         "--reference data/hg19.fa "
-        "--snps output/snps/*.vcf.gz "
-        "--outputnormal {output.normal} "
-        "--outputtumors {output.tumor} "
-        # "--outputsnps "
+        "--snps new_output/snps/*.vcf.gz "
+        "--outputnormal {output.normal_baf} "
+        "--outputtumors {output.tumor_baf} "
+        "--outputsnps {output.snps_list} "
         # "--regions " required for WXS (although I don't think this is true, especially since SNPs are passed)
         "--mincov 8 "
         "--maxcov 300 "
