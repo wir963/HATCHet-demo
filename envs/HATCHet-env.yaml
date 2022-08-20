@@ -7,7 +7,7 @@ channels:
 dependencies:
   - bcftools
   - samtools
-  - hatchet=1.0.2
+  - hatchet=1.0.3
   - tabix
   - mosdepth
   - picard
