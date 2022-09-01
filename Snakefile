@@ -87,9 +87,11 @@ rule hatchet_count_alleles:
     output:
         normal_baf="new_output/baf/normal.1bed", # contains the number of reads for the major and minor allele
         tumor_baf="new_output/baf/tumor.1bed",
-        snps_list = "new_output/count_alleles/snps"
+        snps_list = directory("new_output/count_alleles/snps")
     shell:
         "mkdir {output.snps_list} && "
+        #"touch {output[0]} && "
+        #"touch {output[1]} && "
         "hatchet count-alleles "
         "--tumors {input.tumor} "
         "--normal {input.normal} "
@@ -102,6 +104,7 @@ rule hatchet_count_alleles:
         # "--regions " required for WXS (although I don't think this is true, especially since SNPs are passed)
         "--mincov 8 "
         "--maxcov 300 "
+        #"|| true"
 
 # count the mapped sequencing reads in bins of fixed and given length, uniformly for a BAM file of a normal sample
 # and one or more BAM files of tumor samples
