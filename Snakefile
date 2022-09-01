@@ -22,6 +22,9 @@ rule run_hatchet_init:
         "data/hg19.dict",
         "data/hg19.fa"
     shell:
+        "module use --prepend /data/CDSL_Gurobi_users/modules && "
+        "module load gurobi && "
+        "export GRB_LICENSE_FILE=/data/CDSL_Gurobi_users/gurobi910/gurobi.lic && "
         "hatchet run hatchet.ini"
 
 rule download_bam_files:
@@ -219,9 +222,9 @@ rule download_reference_genome:
 #         "output/results/best.bbc.ucn",
 #         "output/results/best.seg.ucn",
 #     shell:
-#         "module use --prepend /data/CDSL_Gurobi_users/modules && "
-#         "module load gurobi && "
-#         "export GRB_LICENSE_FILE=/data/CDSL_Gurobi_users/gurobi910/gurobi.lic && "
+        # "module use --prepend /data/CDSL_Gurobi_users/modules && "
+        # "module load gurobi && "
+        # "export GRB_LICENSE_FILE=/data/CDSL_Gurobi_users/gurobi910/gurobi.lic && "
 #         "hatchet compute-cn "
 #         "-i {params.in_dir} "
 #         "-x {params.out_dir} "
