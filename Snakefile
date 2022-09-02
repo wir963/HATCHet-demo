@@ -6,6 +6,36 @@
 #         "new_output/baf/normal.1bed"
 #         # "data/normal.bam",
 #         # "data/hg19.fa"
+# is the panel actually necessary? What uses is? genotype-snps?
+# rule run_hatchet_download_panel:
+#     conda:
+#         "envs/HATCHet-env.yaml"
+#     output:
+#         directory("data/reference/panel/1000GP_Phase3")
+#     shell:
+#         # "hatchet run hatchet-download-panel.ini"
+#         "hatchet download-panel --refpaneldir data/reference/panel --refpanel 1000GP_Phase3"
+
+rule run_hatchet_genotype_snps:
+    conda:
+        "envs/HATCHet-env.yaml"
+    input:
+        bam="data/normal.bam",
+        bai="data/normal.bam.bai",
+        dict="data/hg19.dict",
+        ref="data/hg19.fa"
+    output:
+        # directory("output/snps/"),
+        "output/snps/chr22.vcf.gz"
+    shell:
+        "hatchet genotype-snps "
+        "--normal {input.bam} "
+        "--reference {input.ref} "
+        # "--snps  " ignore for now - maybe
+        "--mincov 8 "
+        "--maxcov 300 "
+        "--outputsnps output/snps/"
+
 
 rule run_hatchet_init:
     conda:
