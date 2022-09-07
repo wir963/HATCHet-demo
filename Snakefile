@@ -1,11 +1,12 @@
 
 
-# rule all:
-#     input:
-#         #"new_output/snps/",
-#         "new_output/baf/normal.1bed"
-#         # "data/normal.bam",
-#         # "data/hg19.fa"
+rule all:
+    input:
+        #"new_output/snps/",
+        "output/baf/normal.1bed"
+        # "data/normal.bam",
+        # "data/hg19.fa"
+
 # is the panel actually necessary? What uses is? genotype-snps?
 # rule run_hatchet_download_panel:
 #     conda:
@@ -15,6 +16,32 @@
 #     shell:
 #         # "hatchet run hatchet-download-panel.ini"
 #         "hatchet download-panel --refpaneldir data/reference/panel --refpanel 1000GP_Phase3"
+
+rule hatchet_count_alleles:
+    conda:
+        "envs/HATCHet-env.yaml"
+    input:
+        normal="data/normal.bam",
+        tumor=["data/bulk_03clone1_06clone0_01normal.sorted.bam", "data/bulk_08clone1_Noneclone0_02normal.sorted.bam", "data/bulk_Noneclone1_09clone0_01normal.sorted.bam"],
+        snps=expand("output/snps/chr{chromosome}.vcf.gz", chromosome=list(range(1, 23)) + ["X", "Y"])
+    output:
+        normal_baf="output/baf/normal.1bed", # contains the number of reads for the major and minor allele
+        tumor_baf="output/baf/tumor.1bed",
+        snps_dir = directory("output/count_alleles/snps")
+    shell:
+        "mkdir {output.snps_dir} && "
+        "hatchet count-alleles "
+        "--tumors {input.tumor} "
+        "--normal {input.normal} "
+        "--samples normal tumor1 tumor2 tumor3 "
+        "--reference data/hg19.fa "
+        "--snps {input.snps} "
+        "--outputnormal {output.normal_baf} "
+        "--outputtumors {output.tumor_baf} "
+        "--outputsnps {output.snps_dir} "
+        # "--regions " required for WXS (although I don't think this is true, especially since SNPs are passed)
+        "--mincov 8 "
+        "--maxcov 300 "
 
 rule run_hatchet_genotype_snps:
     conda:
@@ -26,7 +53,7 @@ rule run_hatchet_genotype_snps:
         ref="data/hg19.fa"
     output:
         # directory("output/snps/"),
-        "output/snps/chr22.vcf.gz"
+        expand("output/snps/chr{chromosome}.vcf.gz", chromosome=list(range(1, 23)) + ["X", "Y"])
     shell:
         "hatchet genotype-snps "
         "--normal {input.bam} "
@@ -128,33 +155,7 @@ rule download_reference_genome:
 #         "hatchet run hatchet-count-alleles.ini"
 
 #
-# rule hatchet_count_alleles:
-#     conda:
-#         "envs/HATCHet-env.yaml"
-#     input:
-#         normal="data/normal.bam",
-#         tumor=["data/bulk_03clone1_06clone0_01normal.sorted.bam", "data/bulk_08clone1_Noneclone0_02normal.sorted.bam", "data/bulk_Noneclone1_09clone0_01normal.sorted.bam"],
-#     output:
-#         normal_baf="new_output/baf/normal.1bed", # contains the number of reads for the major and minor allele
-#         tumor_baf="new_output/baf/tumor.1bed",
-#         snps_list = directory("new_output/count_alleles/snps")
-#     shell:
-#         "mkdir {output.snps_list} && "
-#         #"touch {output[0]} && "
-#         #"touch {output[1]} && "
-#         "hatchet count-alleles "
-#         "--tumors {input.tumor} "
-#         "--normal {input.normal} "
-#         "--samples normal tumor1 tumor2 tumor3 "
-#         "--reference data/hg19.fa "
-#         "--snps new_output/snps/*.vcf.gz "
-#         "--outputnormal {output.normal_baf} "
-#         "--outputtumors {output.tumor_baf} "
-#         "--outputsnps {output.snps_list} "
-#         # "--regions " required for WXS (although I don't think this is true, especially since SNPs are passed)
-#         "--mincov 8 "
-#         "--maxcov 300 "
-#         #"|| true"
+
 #
 # # count the mapped sequencing reads in bins of fixed and given length, uniformly for a BAM file of a normal sample
 # # and one or more BAM files of tumor samples
