@@ -25,16 +25,19 @@ rule hatchet_count_reads:
         "envs/HATCHet-env.yaml"
     input:
         normal="data/normal.bam",
-        tumor=["data/bulk_03clone1_06clone0_01normal.sorted.bam", "data/bulk_08clone1_Noneclone0_02normal.sorted.bam", "data/bulk_Noneclone1_09clone0_01normal.sorted.bam"]
+        tumor=["data/bulk_03clone1_06clone0_01normal.sorted.bam", "data/bulk_08clone1_Noneclone0_02normal.sorted.bam", "data/bulk_Noneclone1_09clone0_01normal.sorted.bam"],
+        tumor_baf="output/baf/tumor.1bed"
     output:
         out_dir = directory("output/count_reads"),
         total_tsv = "output/count_reads/total.tsv"
     shell:
         "hatchet count-reads "
-        "--tumors {input.tumor} "
+        "--tumor {input.tumor} "
         "--normal {input.normal} "
         "--samples normal tumor1 tumor2 tumor3 "
         "--reference data/hg19.fa "
+        "--refversion hg19 "
+        "--baffile {input.tumor_baf} "
         "--outdir {output.out_dir} "
 
 
