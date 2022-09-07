@@ -2,8 +2,9 @@
 
 rule all:
     input:
+        "output/count_reads/total.tsv",
         #"new_output/snps/",
-        "output/baf/normal.1bed"
+        # "output/baf/normal.1bed"
         # "data/normal.bam",
         # "data/hg19.fa"
 
@@ -16,6 +17,26 @@ rule all:
 #     shell:
 #         # "hatchet run hatchet-download-panel.ini"
 #         "hatchet download-panel --refpaneldir data/reference/panel --refpanel 1000GP_Phase3"
+
+# count the mapped sequencing reads in bins of fixed and given length, uniformly for a BAM file of a normal sample
+# and one or more BAM files of tumor samples
+rule hatchet_count_reads:
+    conda:
+        "envs/HATCHet-env.yaml"
+    input:
+        normal="data/normal.bam",
+        tumor=["data/bulk_03clone1_06clone0_01normal.sorted.bam", "data/bulk_08clone1_Noneclone0_02normal.sorted.bam", "data/bulk_Noneclone1_09clone0_01normal.sorted.bam"]
+    output:
+        out_dir = directory("output/count_reads"),
+        total_tsv = "output/count_reads/total.tsv"
+    shell:
+        "hatchet count-reads "
+        "--tumors {input.tumor} "
+        "--normal {input.normal} "
+        "--samples normal tumor1 tumor2 tumor3 "
+        "--reference data/hg19.fa "
+        "--outdir {output.out_dir} "
+
 
 rule hatchet_count_alleles:
     conda:
@@ -157,30 +178,7 @@ rule download_reference_genome:
 #
 
 #
-# # count the mapped sequencing reads in bins of fixed and given length, uniformly for a BAM file of a normal sample
-# # and one or more BAM files of tumor samples
-# rule hatchet_count_reads:
-#     conda:
-#         "envs/HATCHet-env.yaml"
-#     input:
-#         normal="data/normal.bam",
-#     params: # use as params for now TODO figure out better way
-#         tumor="data/bulk_03clone1_06clone0_01normal.sorted.bam data/bulk_08clone1_Noneclone0_02normal.sorted.bam data/bulk_Noneclone1_09clone0_01normal.sorted.bam",
-#     output:
-#         normal_rdr="output/rdr/normal.1bed",
-#         tumor_rdr="output/rdr/tumor.1bed",
-#         total_rd="output/rdr/total.tsv"
-#     shell:
-#         "hatchet count-reads "
-#         "--tumors {output.tumor} "
-#         "--normal {input.normal} "
-#         "--samples normal tumor1 tumor2 tumor3 "
-#         "--reference data/hg19.fa "
-#         "--size 50kb "
-#         "--processes 6 "
-#         "--outputnormal {output.normal_rdr} "
-#         "--outputtumors {output.tumor_rdr} "
-#         "--outputtotal {output.total_rd} "
+
 #
 # # combine tumor bin counts, normal bin counts and tumor allele counts to obtain the read-depth ratio
 # # and the mean B-allele frequency of each bin
