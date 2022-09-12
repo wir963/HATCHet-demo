@@ -2,7 +2,8 @@
 
 rule all:
     input:
-        "output/count_reads/total.tsv",
+        # "output/count_reads/total.tsv",
+        "output/bb/bulk.bb"
         #"output/baf/normal.1bed",
         # "output/snps/chr22.vcf.gz",
         #"output/count_reads/total.tsv",
@@ -20,6 +21,27 @@ rule all:
 #     shell:
 #         # "hatchet run hatchet-download-panel.ini"
 #         "hatchet download-panel --refpaneldir data/reference/panel --refpanel 1000GP_Phase3"
+
+
+# combine tumor bin counts, normal bin counts and tumor allele counts to obtain the read-depth ratio
+# and the mean B-allele frequency of each bin
+rule hatchet_combine_counts:
+    conda:
+        "envs/HATCHet-env.yaml"
+    input:
+        total_tsv = "output/count_reads/total.tsv",
+        tumor_baf = "output/baf/tumor.1bed"
+    output:
+        "output/bb/bulk.bb" # tab separated file that include many fields see - http://compbio.cs.brown.edu/hatchet/doc_combine_counts.html
+    shell:
+        "hatchet combine-counts "
+        "--chromosomes chr22 "
+        "--refversion hg19 "
+        "--array output/count_reads "
+        "--baffile {input.tumor_baf} "
+        "--msr 3000 " # minimum number of SNP-covering reads
+        "--mtr 5000 " # minimum number of total reads per bin
+        "--outfile {output} "
 
 # count the mapped sequencing reads in bins of fixed and given length, uniformly for a BAM file of a normal sample
 # and one or more BAM files of tumor samples
@@ -189,30 +211,6 @@ rule download_reference_genome:
 #
 
 #
-# # combine tumor bin counts, normal bin counts and tumor allele counts to obtain the read-depth ratio
-# # and the mean B-allele frequency of each bin
-# rule hatchet_combine_counts:
-#     conda:
-#         "envs/HATCHet-env.yaml"
-#     input:
-#         normal_rdr="output/rdr/normal.1bed",
-#         tumor_rdr="output/rdr/tumor.1bed",
-#         total_rd="output/rdr/total.tsv",
-#         tumor_baf="output/baf/tumor.1bed"
-#     output:
-#         "output/bb/bulk.bb" # tab separated file that include many fields see - http://compbio.cs.brown.edu/hatchet/doc_combine_counts.html
-#     shell:
-#         "hatchet combine-counts "
-#         "--normalbins {input.normal_rdr} "
-#         "--tumorbins {input.tumor_rdr} "
-#         "--tumorbafs {input.tumor_baf} "
-#         "--totalcounts {input.total_rd} "
-#         "--blocklength 25kb "
-#         "--phase None "
-#         " > {output} "
-#         # "--msr 3000 " # minimum number of SNP-covering reads
-#         # "--mtr 5000 " # minimum number of total reads per bin
-#         # "--outfile {output} "
 #
 # rule hatchet_cluster_bins:
 #     conda:
