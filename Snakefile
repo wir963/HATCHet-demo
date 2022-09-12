@@ -35,8 +35,8 @@ rule hatchet_combine_counts:
         "output/bb/bulk.bb" # tab separated file that include many fields see - http://compbio.cs.brown.edu/hatchet/doc_combine_counts.html
     shell:
         "hatchet combine-counts "
-        "--chromosomes chr22 "
         "--refversion hg19 "
+        "--totalcounts {input.total_tsv} "
         "--array output/count_reads "
         "--baffile {input.tumor_baf} "
         "--msr 3000 " # minimum number of SNP-covering reads
@@ -94,26 +94,26 @@ rule hatchet_count_alleles:
         "--mincov 8 "
         "--maxcov 300 "
 
-rule run_hatchet_genotype_snps:
-    conda:
-        "envs/HATCHet-env.yaml"
-    input:
-        bam="data/normal.bam",
-        bai="data/normal.bam.bai",
-        dict="data/hg19.dict",
-        ref="data/hg19.fa"
-    output:
-        # directory("output/snps/"),
-        expand("output/snps/chr{chromosome}.vcf.gz", chromosome=22) #list(range(1, 23)) + ["X", "Y"])
-    shell:
-        "hatchet genotype-snps "
-        "--normal {input.bam} "
-        "--reference {input.ref} "
-        # "--snps  " ignore for now - maybe
-        "--mincov 8 "
-        "--maxcov 300 "
-        "--chromosomes chr22 "
-        "--outputsnps output/snps/"
+#rule run_hatchet_genotype_snps:
+#    conda:
+#        "envs/HATCHet-env.yaml"
+#    input:
+#        bam="data/normal.bam",
+#        bai="data/normal.bam.bai",
+#        dict="data/hg19.dict",
+#        ref="data/hg19.fa"
+#    output:
+#        # directory("output/snps/"),
+#        expand("output/snps/chr{chromosome}.vcf.gz", chromosome=22) #list(range(1, 23)) + ["X", "Y"])
+#    shell:
+#        "hatchet genotype-snps "
+#        "--normal {input.bam} "
+#        "--reference {input.ref} "
+#        # "--snps  " ignore for now - maybe
+#        "--mincov 8 "
+#        "--maxcov 300 "
+#        "--chromosomes chr22 "
+#        "--outputsnps output/snps/"
 
 
 rule run_hatchet_init:
