@@ -3,7 +3,8 @@
 rule all:
     input:
         # "output/count_reads/total.tsv",
-        "output/bb/bulk.bb"
+        # "output/bb/bulk.bb",
+        "output/bbc/bulk.bbc"
         #"output/baf/normal.1bed",
         # "output/snps/chr22.vcf.gz",
         #"output/count_reads/total.tsv",
@@ -22,6 +23,38 @@ rule all:
 #         # "hatchet run hatchet-download-panel.ini"
 #         "hatchet download-panel --refpaneldir data/reference/panel --refpanel 1000GP_Phase3"
 
+# rule hatchet_plot_bins:
+#     conda:
+#         "envs/HATCHet-env.yaml"
+#     input:
+#         "output/bbc/bulk.bbc"
+#     params:
+#         "output/plots"
+#     output:
+#         "output/plots/bb_clustered.png"
+#     shell:
+#         "hatchet plot-bins "
+#         "--rundir {params} "
+#         "-tS 0.005 "
+#         "{input} "
+
+
+rule hatchet_cluster_bins:
+    conda:
+        "envs/HATCHet-env.yaml"
+    input:
+        "output/bb/bulk.bb"
+    output:
+        "output/bbc/bulk.bbc",
+        "output/bbc/bulk.seg"
+    shell:
+        "hatchet cluster-bins "
+        "{input} "
+        "--outsegments {output[1]} "
+        "--outbins {output[0]} "
+        "--diploidbaf 0.08 "
+        # "--tolerancebaf 0.04 "
+        # "--tolerancerdr 0.15 "
 
 # combine tumor bin counts, normal bin counts and tumor allele counts to obtain the read-depth ratio
 # and the mean B-allele frequency of each bin
