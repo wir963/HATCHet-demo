@@ -2,7 +2,8 @@
 
 rule all:
     input:
-        "output/results/best.seg.ucn",
+        "output/summary/intratumor-clones-allelecn.pdf",
+        # "output/results/best.seg.ucn",
         # "output/count_reads/total.tsv",
         # "output/bb/bulk.bb",
         # "output/plots/bb_clustered.png",
@@ -25,6 +26,18 @@ rule all:
 #         # "hatchet run hatchet-download-panel.ini"
 #         "hatchet download-panel --refpaneldir data/reference/panel --refpanel 1000GP_Phase3"
 
+
+rule hatchet_plot_cn:
+    conda:
+        "envs/HATCHet-env.yaml"
+    input:
+        "output/results/best.bbc.ucn"
+    output:
+        "output/summary/intratumor-clones-allelecn.pdf"
+    shell:
+        "hatchet plot-cn "
+        "--rundir output/summary "
+        "{input} "
 
 rule hatchet_compute_cn:
     conda:
