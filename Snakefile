@@ -3,6 +3,9 @@
 rule all:
     input:
         "output/count_reads/total.tsv",
+        #"output/baf/normal.1bed",
+        # "output/snps/chr22.vcf.gz",
+        #"output/count_reads/total.tsv",
         #"new_output/snps/",
         # "output/baf/normal.1bed"
         # "data/normal.bam",
@@ -35,9 +38,10 @@ rule hatchet_count_reads:
         "--tumor {input.tumor} "
         "--normal {input.normal} "
         "--samples normal tumor1 tumor2 tumor3 "
-        "--reference data/hg19.fa "
+        # "--reference data/hg19.fa "
         "--refversion hg19 "
         "--baffile {input.tumor_baf} "
+        "--chromosomes chr22 "
         "--outdir {output.out_dir} "
 
 
@@ -47,7 +51,7 @@ rule hatchet_count_alleles:
     input:
         normal="data/normal.bam",
         tumor=["data/bulk_03clone1_06clone0_01normal.sorted.bam", "data/bulk_08clone1_Noneclone0_02normal.sorted.bam", "data/bulk_Noneclone1_09clone0_01normal.sorted.bam"],
-        snps=expand("output/snps/chr{chromosome}.vcf.gz", chromosome=list(range(1, 23)) + ["X", "Y"])
+        snps=expand("output/snps/chr{chromosome}.vcf.gz", chromosome=22) # list(range(1, 23)) + ["X", "Y"])
     output:
         normal_baf="output/baf/normal.1bed", # contains the number of reads for the major and minor allele
         tumor_baf="output/baf/tumor.1bed",
@@ -60,6 +64,7 @@ rule hatchet_count_alleles:
         "--samples normal tumor1 tumor2 tumor3 "
         "--reference data/hg19.fa "
         "--snps {input.snps} "
+        "--chromosomes chr22 "
         "--outputnormal {output.normal_baf} "
         "--outputtumors {output.tumor_baf} "
         "--outputsnps {output.snps_dir} "
@@ -77,7 +82,7 @@ rule run_hatchet_genotype_snps:
         ref="data/hg19.fa"
     output:
         # directory("output/snps/"),
-        expand("output/snps/chr{chromosome}.vcf.gz", chromosome=list(range(1, 23)) + ["X", "Y"])
+        expand("output/snps/chr{chromosome}.vcf.gz", chromosome=22) #list(range(1, 23)) + ["X", "Y"])
     shell:
         "hatchet genotype-snps "
         "--normal {input.bam} "
@@ -85,6 +90,7 @@ rule run_hatchet_genotype_snps:
         # "--snps  " ignore for now - maybe
         "--mincov 8 "
         "--maxcov 300 "
+        "--chromosomes chr22 "
         "--outputsnps output/snps/"
 
 
