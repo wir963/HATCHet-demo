@@ -4,7 +4,8 @@ rule all:
     input:
         # "output/count_reads/total.tsv",
         # "output/bb/bulk.bb",
-        "output/bbc/bulk.bbc"
+        "output/plots/bb_clustered.png",
+        #"output/bbc/bulk.bbc"
         #"output/baf/normal.1bed",
         # "output/snps/chr22.vcf.gz",
         #"output/count_reads/total.tsv",
@@ -23,20 +24,20 @@ rule all:
 #         # "hatchet run hatchet-download-panel.ini"
 #         "hatchet download-panel --refpaneldir data/reference/panel --refpanel 1000GP_Phase3"
 
-# rule hatchet_plot_bins:
-#     conda:
-#         "envs/HATCHet-env.yaml"
-#     input:
-#         "output/bbc/bulk.bbc"
-#     params:
-#         "output/plots"
-#     output:
-#         "output/plots/bb_clustered.png"
-#     shell:
-#         "hatchet plot-bins "
-#         "--rundir {params} "
-#         "-tS 0.005 "
-#         "{input} "
+rule hatchet_plot_bins_RD:
+    conda:
+        "envs/HATCHet-env.yaml"
+    input:
+        "output/bbc/bulk.bbc"
+    params:
+        "output/plots"
+    output:
+        "output/plots/bb_clustered.png"
+    shell:
+        "hatchet plot-bins "
+        "-c RD "
+        "--rundir {params} "
+        "{input} "
 
 
 rule hatchet_cluster_bins:
