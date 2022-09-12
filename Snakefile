@@ -2,9 +2,10 @@
 
 rule all:
     input:
+        "output/results/best.seg.ucn",
         # "output/count_reads/total.tsv",
         # "output/bb/bulk.bb",
-        "output/plots/bb_clustered.png",
+        # "output/plots/bb_clustered.png",
         #"output/bbc/bulk.bbc"
         #"output/baf/normal.1bed",
         # "output/snps/chr22.vcf.gz",
@@ -24,7 +25,30 @@ rule all:
 #         # "hatchet run hatchet-download-panel.ini"
 #         "hatchet download-panel --refpaneldir data/reference/panel --refpanel 1000GP_Phase3"
 
-rule hatchet_plot_bins_RD:
+
+rule hatchet_compute_cn:
+    conda:
+        "envs/HATCHet-env.yaml"
+    input:
+        "output/bbc/bulk.bbc",
+        "output/bbc/bulk.seg"
+    params:
+        in_dir="output/bbc/bulk",
+        out_dir="output/results"
+    output:
+        "output/results/best.bbc.ucn",
+        "output/results/best.seg.ucn",
+    shell:
+        "module use --prepend /data/CDSL_Gurobi_users/modules && "
+        "module load gurobi && "
+        "export GRB_LICENSE_FILE=/data/CDSL_Gurobi_users/gurobi910/gurobi.lic && "
+        "hatchet compute-cn "
+        "-i {params.in_dir} "
+        "-x {params.out_dir} "
+        "--clones 2,8 " # default
+
+# 2d-scatter plots where x-axis corresponds to the BAF and y-axis to the RDR
+rule hatchet_plot_bins_BB:
     conda:
         "envs/HATCHet-env.yaml"
     input:
@@ -32,13 +56,89 @@ rule hatchet_plot_bins_RD:
     params:
         "output/plots"
     output:
-        "output/plots/bb_clustered.png"
+        "output/plots/bb.pdf"
+    shell:
+        "hatchet plot-bins "
+        "-c BB "
+        "--rundir {params} "
+        "{input} "
+
+# 2d-scatter plots where x-axis corresponds to the BAF and y-axis to the RDR
+# points are colored by cluster (as determined by HATCHet) - need to pass clusters in here
+rule hatchet_plot_bins_CBB:
+    conda:
+        "envs/HATCHet-env.yaml"
+    input:
+        "output/bbc/bulk.bbc"
+    params:
+        "output/plots"
+    output:
+        "output/plots/bb_clustered.pdf"
+    shell:
+        "hatchet plot-bins "
+        "-c CBB "
+        "--rundir {params} "
+        "{input} "
+
+rule hatchet_plot_bins_BAF:
+    conda:
+        "envs/HATCHet-env.yaml"
+    input:
+        "output/bbc/bulk.bbc"
+    params:
+        "output/plots"
+    output:
+        "output/plots/ballelefrequency.pdf"
+    shell:
+        "hatchet plot-bins "
+        "-c BAF "
+        "--rundir {params} "
+        "{input} "
+
+rule hatchet_plot_bins_CBAF:
+    conda:
+        "envs/HATCHet-env.yaml"
+    input:
+        "output/bbc/bulk.bbc"
+    params:
+        "output/plots"
+    output:
+        "output/plots/ballelefrequency_clustered.pdf"
+    shell:
+        "hatchet plot-bins "
+        "-c CBAF "
+        "--rundir {params} "
+        "{input} "
+
+rule hatchet_plot_bins_RDR:
+    conda:
+        "envs/HATCHet-env.yaml"
+    input:
+        "output/bbc/bulk.bbc"
+    params:
+        "output/plots"
+    output:
+        "output/plots/readdepthratio.pdf"
     shell:
         "hatchet plot-bins "
         "-c RD "
         "--rundir {params} "
         "{input} "
 
+rule hatchet_plot_bins_RDR_clustered:
+    conda:
+        "envs/HATCHet-env.yaml"
+    input:
+        "output/bbc/bulk.bbc"
+    params:
+        "output/plots"
+    output:
+        "output/plots/readdepthratio_clustered.pdf"
+    shell:
+        "hatchet plot-bins "
+        "-c CRD "
+        "--rundir {params} "
+        "{input} "
 
 rule hatchet_cluster_bins:
     conda:
@@ -54,8 +154,7 @@ rule hatchet_cluster_bins:
         "--outsegments {output[1]} "
         "--outbins {output[0]} "
         "--diploidbaf 0.08 "
-        # "--tolerancebaf 0.04 "
-        # "--tolerancerdr 0.15 "
+
 
 # combine tumor bin counts, normal bin counts and tumor allele counts to obtain the read-depth ratio
 # and the mean B-allele frequency of each bin
