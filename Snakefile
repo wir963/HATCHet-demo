@@ -2,7 +2,8 @@
 
 rule all:
     input:
-        "output/summary/intratumor-clones-allelecn.pdf",
+        #"output/summary/intratumor-clones-allelecn.pdf",
+        "output/phased_snps/phased.vcf.gz"
         # "output/results/best.seg.ucn",
         # "output/count_reads/total.tsv",
         # "output/bb/bulk.bb",
@@ -16,15 +17,8 @@ rule all:
         # "data/normal.bam",
         # "data/hg19.fa"
 
-# is the panel actually necessary? What uses is? genotype-snps?
-# rule run_hatchet_download_panel:
-#     conda:
-#         "envs/HATCHet-env.yaml"
-#     output:
-#         directory("data/reference/panel/1000GP_Phase3")
-#     shell:
-#         # "hatchet run hatchet-download-panel.ini"
-#         "hatchet download-panel --refpaneldir data/reference/panel --refpanel 1000GP_Phase3"
+
+
 
 
 rule hatchet_plot_cn:
@@ -240,26 +234,53 @@ rule hatchet_count_alleles:
         "--mincov 8 "
         "--maxcov 300 "
 
-#rule run_hatchet_genotype_snps:
-#    conda:
-#        "envs/HATCHet-env.yaml"
-#    input:
-#        bam="data/normal.bam",
-#        bai="data/normal.bam.bai",
-#        dict="data/hg19.dict",
-#        ref="data/hg19.fa"
-#    output:
-#        # directory("output/snps/"),
-#        expand("output/snps/chr{chromosome}.vcf.gz", chromosome=22) #list(range(1, 23)) + ["X", "Y"])
-#    shell:
-#        "hatchet genotype-snps "
-#        "--normal {input.bam} "
-#        "--reference {input.ref} "
-#        # "--snps  " ignore for now - maybe
-#        "--mincov 8 "
-#        "--maxcov 300 "
-#        "--chromosomes chr22 "
-#        "--outputsnps output/snps/"
+rule hatchet_phasing:
+    conda:
+        "envs/HATCHet-env.yaml"
+    input:
+        snps=expand("output/snps/chr{chromosome}.vcf.gz", chromosome=22)
+    output:
+        "output/phased_snps/phased.vcf.gz"
+    shell:
+        "hatchet phase-snps "
+        "--snps {input.snps} "
+        "--refpaneldir data/reference/panel/1000GP_Phase3 "
+        "--refgenome data/hg19.fa "
+        "--chrnotation "
+        "--outdir output/phased_snps "
+
+
+# is the panel actually necessary? What uses is? genotype-snps?
+rule run_hatchet_download_panel:
+    conda:
+        "envs/HATCHet-env.yaml"
+    output:
+        directory("data/reference/panel/1000GP_Phase3")
+    shell:
+        # "hatchet run hatchet-download-panel.ini"
+        "hatchet download-panel --refpaneldir data/reference/panel --refpanel 1000GP_Phase3"
+
+
+rule run_hatchet_genotype_snps:
+   conda:
+       "envs/HATCHet-env.yaml"
+   input:
+       bam="data/normal.bam",
+       bai="data/normal.bam.bai",
+       dict="data/hg19.dict",
+       ref="data/hg19.fa"
+   output:
+       # directory("output/snps/"),
+       expand("output/snps/chr{chromosome}.vcf.gz", chromosome=22) #list(range(1, 23)) + ["X", "Y"])
+   shell:
+       "hatchet genotype-snps "
+       "--normal {input.bam} "
+       "--reference {input.ref} "
+       # "--snps  " ignore for now - maybe
+       "--mincov 8 "
+       "--maxcov 300 "
+       "--chromosomes chr22 "
+       "--outputsnps output/snps/"
 
 
 rule run_hatchet_init:
@@ -312,129 +333,3 @@ rule download_reference_genome:
         "curl -L https://hgdownload.soe.ucsc.edu/goldenPath/hg19/bigZips/hg19.fa.gz | gzip -d > data/hg19.fa && "
         "samtools faidx data/hg19.fa && "
         "samtools dict data/hg19.fa > data/hg19.dict"
-
-# download these common snps because this reference genome uses chr1, etc.
-# https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/GATK/00-All.vcf.gz
-# alternatively, you would download these common snps
-# https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/00-All.vcf.gz
-# don't need to actually download because you can use a URL in the genotype_snps rule
-# rule download_common_snps:
-#     shell:
-#         "https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/GATK/00-All.vcf.gz"
-
-# rule genotype_snps:
-#     conda:
-#         "envs/HATCHet-env.yaml"
-#     shell:
-#         "hatchet run hatchet-genotype-snps.ini"
-
-# rule genotype_snps:
-#     conda:
-#         "envs/HATCHet-env.yaml"
-#     input:
-#         "data/normal.bam",
-#         "data/hg19.fa"
-#     output:
-#         directory("new_output/snps/")
-#     shell:
-#         "mkdir {output[0]} && "
-#         "hatchet genotype-snps "
-#         "--normal data/normal.bam "
-#         "--reference data/hg19.fa "
-#         "--snps https://ftp.ncbi.nih.gov/snp/organisms/human_9606_b151_GRCh37p13/VCF/GATK/00-All.vcf.gz "# use this version because the ref genome using chr1
-#         "--mincov 8 "
-#         "--maxcov 300 "
-#         "--outputsnps new_output/snps/"
-
-# rule hatchet_count_alleles:
-#     conda:
-#         "envs/HATCHet-env.yaml"
-#     shell:
-#         "hatchet run hatchet-count-alleles.ini"
-
-#
-
-#
-
-#
-#
-# rule hatchet_cluster_bins:
-#     conda:
-#         "envs/HATCHet-env.yaml"
-#     input:
-#         "output/bb/bulk.bb"
-#     output:
-#         "output/bbc/bulk.bbc",
-#         "output/bbc/bulk.seg"
-#     shell:
-#         "hatchet cluster-bins "
-#         "{input} "
-#         "--outsegments {output[1]} "
-#         "--outbins {output[0]} "
-#         "--diploidbaf 0.08 "
-#         "--tolerancebaf 0.04 "
-#         "--tolerancerdr 0.15 "
-#
-#
-# rule hatchet_plot_bins:
-#     conda:
-#         "envs/HATCHet-env.yaml"
-#     input:
-#         "output/bbc/bulk.bbc"
-#     params:
-#         "output/plots"
-#     output:
-#         "output/plots/bb_clustered.png"
-#     shell:
-#         "hatchet plot-bins "
-#         "--rundir {params} "
-#         "-tS 0.005 "
-#         "{input} "
-#
-# rule hatchet_compute_cn:
-#     conda:
-#         "envs/HATCHet-env.yaml"
-#     input:
-#         "output/bbc/bulk.bbc",
-#         "output/bbc/bulk.seg"
-#     params:
-#         in_dir="output/bbc/bulk",
-#         out_dir="output/results"
-#     output:
-#         "output/results/best.bbc.ucn",
-#         "output/results/best.seg.ucn",
-#     shell:
-        # "module use --prepend /data/CDSL_Gurobi_users/modules && "
-        # "module load gurobi && "
-        # "export GRB_LICENSE_FILE=/data/CDSL_Gurobi_users/gurobi910/gurobi.lic && "
-#         "hatchet compute-cn "
-#         "-i {params.in_dir} "
-#         "-x {params.out_dir} "
-#         "--clones 2,8 " # default
-#
-# rule hatchet_plot_cn:
-#     conda:
-#         "envs/HATCHet-env.yaml"
-#     input:
-#         "output/results/best.bbc.ucn"
-#     output:
-#         "output/summary/intratumor-clones-allelecn.pdf"
-#     shell:
-#         "hatchet plot-cn "
-#         "--rundir output/summary "
-#         "{input} "
-
-
-# let's genotype snps using something like platypus
-# rule genotype_snps:
-#     conda:
-#         "envs/HATCHet-env.yaml"
-#     shell:
-#         "hatchet genotype-snps "
-#         "-N {NORMAL} "
-#         "-r {REF} "
-#         "-j ${J} "
-#         "-c ${MINREADS} "
-#         "-C ${MAXREADS}"
-#         # "-R ${LIST} " use this to limit genotype_snps to a particular region
-#         "-o ${SNP}"
