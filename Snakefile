@@ -1,50 +1,53 @@
+from os.path import join
 
+
+UNPHASED_SNPS_DIR = "output/snps/"
+UNPHASED_SNPS = join(UNPHASED_SNPS_DIR, "chr{chromosome}.vcf.gz")
+PHASED_SNPS_DIR = "output/phased_snps/"
+PHASED_SNPS = join(PHASED_SNPS_DIR, "phased.vcf.gz")
+
+normal_baf = join("output", "baf", "{phasing}-snps", "normal.1bed")
+tumor_baf = join("output", "baf", "{phasing}-snps", "tumor.1bed")
+count_alleles_snps_dir = join("output", "count_alleles", "{phasing}-snps", "temp")
+
+count_reads_dir = join("output", "count_reads", "{phasing}-snps")
+total_reads_tsv = join(count_reads_dir, "total.tsv")
+
+combined_counts = join("output", "bb", "{phasing}-snps", "bulk.bb")
+
+clustered_dir = join("output", "bbc", "{phasing}-snps")
+clustered_genomic_bins = join(clustered_dir, "bulk.bbc")
+clustered_genomic_segments = join(clustered_dir, "bulk.seg")
+
+results_dir = join("output", "results", "{phasing}-snps")
+CN_bins = join(results_dir, "best.bbc.ucn")
+CN_segs = join(results_dir, "best.seg.ucn")
+
+include: "rules/make-plots.smk"
 
 rule all:
     input:
-        #"output/summary/intratumor-clones-allelecn.pdf",
-        "output/phased_snps/phased.vcf.gz"
-        # "output/results/best.seg.ucn",
-        # "output/count_reads/total.tsv",
-        # "output/bb/bulk.bb",
-        # "output/plots/bb_clustered.png",
-        #"output/bbc/bulk.bbc"
-        #"output/baf/normal.1bed",
-        # "output/snps/chr22.vcf.gz",
-        #"output/count_reads/total.tsv",
-        #"new_output/snps/",
-        # "output/baf/normal.1bed"
-        # "data/normal.bam",
-        # "data/hg19.fa"
+        expand(BIN_2D_PLOT, phasing=["phased", "unphased"])
+        expand(CLUSTERED_BIN_2D_PLOT, phasing=["phased", "unphased"])
+        expand(BAF_PLOT, phasing=["phased", "unphased"])
+        expand(CLUSTERED_BAF_PLOT, phasing=["phased", "unphased"])
+        expand(RDR_PLOT, phasing=["phased", "unphased"])
+        expand(CLUSTERED_RDR_PLOT, phasing=["phased", "unphased"])
 
 
-
-
-
-rule hatchet_plot_cn:
-    conda:
-        "envs/HATCHet-env.yaml"
-    input:
-        "output/results/best.bbc.ucn"
-    output:
-        "output/summary/intratumor-clones-allelecn.pdf"
-    shell:
-        "hatchet plot-cn "
-        "--rundir output/summary "
-        "{input} "
 
 rule hatchet_compute_cn:
-    conda:
-        "envs/HATCHet-env.yaml"
+    # conda:
+    #     "envs/HATCHet-env.yaml"
     input:
-        "output/bbc/bulk.bbc",
-        "output/bbc/bulk.seg"
+        clustered_genomic_bins,
+        clustered_genomic_segments
     params:
-        in_dir="output/bbc/bulk",
-        out_dir="output/results"
+        in_dir=clustered_dir,
+        out_dir=results_dir,
     output:
-        "output/results/best.bbc.ucn",
-        "output/results/best.seg.ucn",
+        CN_bins,
+        CN_segs,
     shell:
         "module use --prepend /data/CDSL_Gurobi_users/modules && "
         "module load gurobi && "
@@ -54,125 +57,33 @@ rule hatchet_compute_cn:
         "-x {params.out_dir} "
         "--clones 2,8 " # default
 
-# 2d-scatter plots where x-axis corresponds to the BAF and y-axis to the RDR
-rule hatchet_plot_bins_BB:
-    conda:
-        "envs/HATCHet-env.yaml"
-    input:
-        "output/bbc/bulk.bbc"
-    params:
-        "output/plots"
-    output:
-        "output/plots/bb.pdf"
-    shell:
-        "hatchet plot-bins "
-        "-c BB "
-        "--rundir {params} "
-        "{input} "
-
-# 2d-scatter plots where x-axis corresponds to the BAF and y-axis to the RDR
-# points are colored by cluster (as determined by HATCHet) - need to pass clusters in here
-rule hatchet_plot_bins_CBB:
-    conda:
-        "envs/HATCHet-env.yaml"
-    input:
-        "output/bbc/bulk.bbc"
-    params:
-        "output/plots"
-    output:
-        "output/plots/bb_clustered.pdf"
-    shell:
-        "hatchet plot-bins "
-        "-c CBB "
-        "--rundir {params} "
-        "{input} "
-
-rule hatchet_plot_bins_BAF:
-    conda:
-        "envs/HATCHet-env.yaml"
-    input:
-        "output/bbc/bulk.bbc"
-    params:
-        "output/plots"
-    output:
-        "output/plots/ballelefrequency.pdf"
-    shell:
-        "hatchet plot-bins "
-        "-c BAF "
-        "--rundir {params} "
-        "{input} "
-
-rule hatchet_plot_bins_CBAF:
-    conda:
-        "envs/HATCHet-env.yaml"
-    input:
-        "output/bbc/bulk.bbc"
-    params:
-        "output/plots"
-    output:
-        "output/plots/ballelefrequency_clustered.pdf"
-    shell:
-        "hatchet plot-bins "
-        "-c CBAF "
-        "--rundir {params} "
-        "{input} "
-
-rule hatchet_plot_bins_RDR:
-    conda:
-        "envs/HATCHet-env.yaml"
-    input:
-        "output/bbc/bulk.bbc"
-    params:
-        "output/plots"
-    output:
-        "output/plots/readdepthratio.pdf"
-    shell:
-        "hatchet plot-bins "
-        "-c RD "
-        "--rundir {params} "
-        "{input} "
-
-rule hatchet_plot_bins_RDR_clustered:
-    conda:
-        "envs/HATCHet-env.yaml"
-    input:
-        "output/bbc/bulk.bbc"
-    params:
-        "output/plots"
-    output:
-        "output/plots/readdepthratio_clustered.pdf"
-    shell:
-        "hatchet plot-bins "
-        "-c CRD "
-        "--rundir {params} "
-        "{input} "
-
 rule hatchet_cluster_bins:
-    conda:
-        "envs/HATCHet-env.yaml"
+    # conda:
+    #     "envs/HATCHet-env.yaml"
     input:
-        "output/bb/bulk.bb"
+        combined_counts
     output:
-        "output/bbc/bulk.bbc",
-        "output/bbc/bulk.seg"
+        clustered_genomic_bins,
+        clustered_genomic_segments
     shell:
         "hatchet cluster-bins "
         "{input} "
-        "--outsegments {output[1]} "
-        "--outbins {output[0]} "
+        "--outsegments {output.clustered_genomic_segments} "
+        "--outbins {output.clustered_genomic_bins} "
         "--diploidbaf 0.08 "
+        "--seed 0 " # to ensure reproducibility
 
 
 # combine tumor bin counts, normal bin counts and tumor allele counts to obtain the read-depth ratio
 # and the mean B-allele frequency of each bin
 rule hatchet_combine_counts:
-    conda:
-        "envs/HATCHet-env.yaml"
+    # conda:
+    #     "envs/HATCHet-env.yaml"
     input:
-        total_tsv = "output/count_reads/total.tsv",
-        tumor_baf = "output/baf/tumor.1bed"
+        total_tsv = total_reads_tsv,
+        tumor_baf = tumor_baf
     output:
-        "output/bb/bulk.bb" # tab separated file that include many fields see - http://compbio.cs.brown.edu/hatchet/doc_combine_counts.html
+        combined_counts # tab separated file that include many fields see - http://compbio.cs.brown.edu/hatchet/doc_combine_counts.html
     shell:
         "hatchet combine-counts "
         "--refversion hg19 "
@@ -186,38 +97,43 @@ rule hatchet_combine_counts:
 # count the mapped sequencing reads in bins of fixed and given length, uniformly for a BAM file of a normal sample
 # and one or more BAM files of tumor samples
 rule hatchet_count_reads:
-    conda:
-        "envs/HATCHet-env.yaml"
+    # conda:
+    #     "envs/HATCHet-env.yaml"
     input:
-        normal="data/normal.bam",
-        tumor=["data/bulk_03clone1_06clone0_01normal.sorted.bam", "data/bulk_08clone1_Noneclone0_02normal.sorted.bam", "data/bulk_Noneclone1_09clone0_01normal.sorted.bam"],
-        tumor_baf="output/baf/tumor.1bed"
+        normal = "data/normal.bam",
+        tumor = ["data/bulk_03clone1_06clone0_01normal.sorted.bam", "data/bulk_08clone1_Noneclone0_02normal.sorted.bam", "data/bulk_Noneclone1_09clone0_01normal.sorted.bam"],
+        tumor_baf = tumor_baf
     output:
-        out_dir = directory("output/count_reads"),
-        total_tsv = "output/count_reads/total.tsv"
+        out_dir = directory(count_reads_dir),
+        total_tsv = total_reads_tsv
     shell:
         "hatchet count-reads "
         "--tumor {input.tumor} "
         "--normal {input.normal} "
         "--samples normal tumor1 tumor2 tumor3 "
-        # "--reference data/hg19.fa "
         "--refversion hg19 "
         "--baffile {input.tumor_baf} "
         "--chromosomes chr22 "
         "--outdir {output.out_dir} "
 
 
+def get_snps(wildcards):
+    if wildcards["phasing"] == "phased":
+        return PHASED_SNPS
+    else:
+        return expand(PHASED_SNPS, chromosome=22)
+
 rule hatchet_count_alleles:
-    conda:
-        "envs/HATCHet-env.yaml"
+    # conda:
+    #     "envs/HATCHet-env.yaml"
     input:
         normal="data/normal.bam",
         tumor=["data/bulk_03clone1_06clone0_01normal.sorted.bam", "data/bulk_08clone1_Noneclone0_02normal.sorted.bam", "data/bulk_Noneclone1_09clone0_01normal.sorted.bam"],
-        snps=expand("output/snps/chr{chromosome}.vcf.gz", chromosome=22) # list(range(1, 23)) + ["X", "Y"])
+        snps = get_snps,
     output:
-        normal_baf="output/baf/normal.1bed", # contains the number of reads for the major and minor allele
-        tumor_baf="output/baf/tumor.1bed",
-        snps_dir = directory("output/count_alleles/snps")
+        normal_baf = normal_baf, # contains the number of reads for the major and minor allele
+        tumor_baf = tumor_baf,
+        snps_dir = directory(count_alleles_snps_dir)
     shell:
         "mkdir {output.snps_dir} && "
         "hatchet count-alleles "
@@ -235,25 +151,25 @@ rule hatchet_count_alleles:
         "--maxcov 300 "
 
 rule hatchet_phasing:
-    conda:
-        "envs/HATCHet-env.yaml"
+    # conda:
+    #     "envs/HATCHet-env.yaml"
     input:
-        snps=expand("output/snps/chr{chromosome}.vcf.gz", chromosome=22)
+        snps=expand(UNPHASED_SNPS, chromosome=22)
     output:
-        "output/phased_snps/phased.vcf.gz"
+        PHASED_SNPS
     shell:
         "hatchet phase-snps "
         "--snps {input.snps} "
         "--refpaneldir data/reference/panel/1000GP_Phase3 "
         "--refgenome data/hg19.fa "
         "--chrnotation "
-        "--outdir output/phased_snps "
+        "--outdir {PHASED_SNPS_DIR} "
 
 
-# is the panel actually necessary? What uses is? genotype-snps?
+# used by phase-snps
 rule run_hatchet_download_panel:
-    conda:
-        "envs/HATCHet-env.yaml"
+    # conda:
+    #     "envs/HATCHet-env.yaml"
     output:
         directory("data/reference/panel/1000GP_Phase3")
     shell:
@@ -261,47 +177,46 @@ rule run_hatchet_download_panel:
         "hatchet download-panel --refpaneldir data/reference/panel --refpanel 1000GP_Phase3"
 
 
-#rule run_hatchet_genotype_snps:
-#   conda:
-#       "envs/HATCHet-env.yaml"
-#   input:
-#       bam="data/normal.bam",
-#       bai="data/normal.bam.bai",
-#       dict="data/hg19.dict",
-#       ref="data/hg19.fa"
-#   output:
-#       # directory("output/snps/"),
-#       expand("output/snps/chr{chromosome}.vcf.gz", chromosome=22) #list(range(1, 23)) + ["X", "Y"])
-#   shell:
-#       "hatchet genotype-snps "
-#       "--normal {input.bam} "
-#       "--reference {input.ref} "
-#       # "--snps  " ignore for now - maybe
-#       "--mincov 8 "
-#       "--maxcov 300 "
-#       "--chromosomes chr22 "
-#       "--outputsnps output/snps/"
+rule run_hatchet_genotype_snps:
+  # conda:
+  #     "envs/HATCHet-env.yaml"
+  input:
+      bam="data/normal.bam",
+      bai="data/normal.bam.bai",
+      dict="data/hg19.dict",
+      ref="data/hg19.fa"
+  output:
+      # directory("output/snps/"),
+      expand(UNPHASED_SNPS, chromosome=22) #list(range(1, 23)) + ["X", "Y"])
+  shell:
+      "hatchet genotype-snps "
+      "--normal {input.bam} "
+      "--reference {input.ref} "
+      "--mincov 8 "
+      "--maxcov 300 "
+      "--chromosomes chr22 "
+      "--outputsnps {UNPHASED_SNPS_DIR}"
 
 
-rule run_hatchet_init:
-    conda:
-        "envs/HATCHet-env.yaml"
-    input:
-        "data/normal.bam",
-        "data/normal.bam.bai",
-        "data/bulk_03clone1_06clone0_01normal.sorted.bam",
-        "data/bulk_03clone1_06clone0_01normal.sorted.bam.bai",
-        "data/bulk_08clone1_Noneclone0_02normal.sorted.bam",
-        "data/bulk_08clone1_Noneclone0_02normal.sorted.bam.bai",
-        "data/bulk_Noneclone1_09clone0_01normal.sorted.bam",
-        "data/bulk_Noneclone1_09clone0_01normal.sorted.bam.bai",
-        "data/hg19.dict",
-        "data/hg19.fa"
-    shell:
-        "module use --prepend /data/CDSL_Gurobi_users/modules && "
-        "module load gurobi && "
-        "export GRB_LICENSE_FILE=/data/CDSL_Gurobi_users/gurobi910/gurobi.lic && "
-        "hatchet run hatchet.ini"
+# rule run_hatchet_init:
+#     conda:
+#         "envs/HATCHet-env.yaml"
+#     input:
+#         "data/normal.bam",
+#         "data/normal.bam.bai",
+#         "data/bulk_03clone1_06clone0_01normal.sorted.bam",
+#         "data/bulk_03clone1_06clone0_01normal.sorted.bam.bai",
+#         "data/bulk_08clone1_Noneclone0_02normal.sorted.bam",
+#         "data/bulk_08clone1_Noneclone0_02normal.sorted.bam.bai",
+#         "data/bulk_Noneclone1_09clone0_01normal.sorted.bam",
+#         "data/bulk_Noneclone1_09clone0_01normal.sorted.bam.bai",
+#         "data/hg19.dict",
+#         "data/hg19.fa"
+#     shell:
+#         "module use --prepend /data/CDSL_Gurobi_users/modules && "
+#         "module load gurobi && "
+#         "export GRB_LICENSE_FILE=/data/CDSL_Gurobi_users/gurobi910/gurobi.lic && "
+#         "hatchet run hatchet.ini"
 
 rule download_bam_files:
     output:
