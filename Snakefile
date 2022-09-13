@@ -261,26 +261,26 @@ rule run_hatchet_download_panel:
         "hatchet download-panel --refpaneldir data/reference/panel --refpanel 1000GP_Phase3"
 
 
-rule run_hatchet_genotype_snps:
-   conda:
-       "envs/HATCHet-env.yaml"
-   input:
-       bam="data/normal.bam",
-       bai="data/normal.bam.bai",
-       dict="data/hg19.dict",
-       ref="data/hg19.fa"
-   output:
-       # directory("output/snps/"),
-       expand("output/snps/chr{chromosome}.vcf.gz", chromosome=22) #list(range(1, 23)) + ["X", "Y"])
-   shell:
-       "hatchet genotype-snps "
-       "--normal {input.bam} "
-       "--reference {input.ref} "
-       # "--snps  " ignore for now - maybe
-       "--mincov 8 "
-       "--maxcov 300 "
-       "--chromosomes chr22 "
-       "--outputsnps output/snps/"
+#rule run_hatchet_genotype_snps:
+#   conda:
+#       "envs/HATCHet-env.yaml"
+#   input:
+#       bam="data/normal.bam",
+#       bai="data/normal.bam.bai",
+#       dict="data/hg19.dict",
+#       ref="data/hg19.fa"
+#   output:
+#       # directory("output/snps/"),
+#       expand("output/snps/chr{chromosome}.vcf.gz", chromosome=22) #list(range(1, 23)) + ["X", "Y"])
+#   shell:
+#       "hatchet genotype-snps "
+#       "--normal {input.bam} "
+#       "--reference {input.ref} "
+#       # "--snps  " ignore for now - maybe
+#       "--mincov 8 "
+#       "--maxcov 300 "
+#       "--chromosomes chr22 "
+#       "--outputsnps output/snps/"
 
 
 rule run_hatchet_init:
