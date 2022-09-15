@@ -27,12 +27,13 @@ include: "rules/make-plots.smk"
 
 rule all:
     input:
-        expand(BIN_2D_PLOT, phasing=["phased", "unphased"])
-        expand(CLUSTERED_BIN_2D_PLOT, phasing=["phased", "unphased"])
-        expand(BAF_PLOT, phasing=["phased", "unphased"])
-        expand(CLUSTERED_BAF_PLOT, phasing=["phased", "unphased"])
-        expand(RDR_PLOT, phasing=["phased", "unphased"])
-        expand(CLUSTERED_RDR_PLOT, phasing=["phased", "unphased"])
+        PHASED_SNPS,
+        #expand(BIN_2D_PLOT, phasing=["phased", "unphased"]),
+        #expand(CLUSTERED_BIN_2D_PLOT, phasing=["phased", "unphased"]),
+        #expand(BAF_PLOT, phasing=["phased", "unphased"]),
+        #expand(CLUSTERED_BAF_PLOT, phasing=["phased", "unphased"]),
+        #expand(RDR_PLOT, phasing=["phased", "unphased"]),
+        #expand(CLUSTERED_RDR_PLOT, phasing=["phased", "unphased"]),
 
 
 
@@ -63,8 +64,8 @@ rule hatchet_cluster_bins:
     input:
         combined_counts
     output:
-        clustered_genomic_bins,
-        clustered_genomic_segments
+        clustered_genomic_bins = clustered_genomic_bins,
+        clustered_genomic_segments = clustered_genomic_segments,
     shell:
         "hatchet cluster-bins "
         "{input} "
@@ -119,9 +120,9 @@ rule hatchet_count_reads:
 
 def get_snps(wildcards):
     if wildcards["phasing"] == "phased":
-        return PHASED_SNPS
+        return "output/phased_snps/chr22.vcf.gz" 
     else:
-        return expand(PHASED_SNPS, chromosome=22)
+        return expand(UNPHASED_SNPS, chromosome=22)
 
 rule hatchet_count_alleles:
     # conda:
@@ -130,12 +131,13 @@ rule hatchet_count_alleles:
         normal="data/normal.bam",
         tumor=["data/bulk_03clone1_06clone0_01normal.sorted.bam", "data/bulk_08clone1_Noneclone0_02normal.sorted.bam", "data/bulk_Noneclone1_09clone0_01normal.sorted.bam"],
         snps = get_snps,
+    params:
+        snps_dir = count_alleles_snps_dir
     output:
         normal_baf = normal_baf, # contains the number of reads for the major and minor allele
         tumor_baf = tumor_baf,
-        snps_dir = directory(count_alleles_snps_dir)
     shell:
-        "mkdir {output.snps_dir} && "
+        "mkdir -p {params.snps_dir} && "
         "hatchet count-alleles "
         "--tumors {input.tumor} "
         "--normal {input.normal} "
@@ -145,7 +147,7 @@ rule hatchet_count_alleles:
         "--chromosomes chr22 "
         "--outputnormal {output.normal_baf} "
         "--outputtumors {output.tumor_baf} "
-        "--outputsnps {output.snps_dir} "
+        "--outputsnps {params.snps_dir} "
         # "--regions " required for WXS (although I don't think this is true, especially since SNPs are passed)
         "--mincov 8 "
         "--maxcov 300 "
@@ -154,13 +156,15 @@ rule hatchet_phasing:
     # conda:
     #     "envs/HATCHet-env.yaml"
     input:
-        snps=expand(UNPHASED_SNPS, chromosome=22)
+        snps=expand(UNPHASED_SNPS, chromosome=22),
+        panel="data/reference/panel/1000GP_Phase3"
     output:
         PHASED_SNPS
     shell:
         "hatchet phase-snps "
         "--snps {input.snps} "
-        "--refpaneldir data/reference/panel/1000GP_Phase3 "
+        "--refpaneldir data/reference/panel "
+        "--refversion hg19 "
         "--refgenome data/hg19.fa "
         "--chrnotation "
         "--outdir {PHASED_SNPS_DIR} "

@@ -1,4 +1,4 @@
-
+localrules: hatchet_plot_bins_BB, hatchet_plot_bins_CBB, hatchet_plot_bins_BAF, hatchet_plot_bins_CBAF, hatchet_plot_bins_RDR, hatchet_plot_bins_RDR_clustered
 
 PLOTS_DIR = join("output", "plots", "{phasing}-snps")
 
@@ -109,7 +109,7 @@ rule hatchet_plot_bins_RDR_clustered:
     params:
         PLOTS_DIR
     output:
-        RDR_CLUSTERED_PLOT
+        CLUSTERED_RDR_PLOT
     shell:
         "hatchet plot-bins "
         "-c CRD "

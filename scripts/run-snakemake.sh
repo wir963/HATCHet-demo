@@ -1,6 +1,7 @@
 #!/bin/bash
 
 module load snakemake
+conda activate hatchet
 snakemake \
 --use-conda \
 --nolock \
